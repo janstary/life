@@ -61,14 +61,13 @@ init_rand(uint32_t rows, uint32_t cols, int bits)
 void
 prgrid(struct grid * grid)
 {
-	uint32_t i, j;
+	uint32_t i, j, w;
 	if (grid == NULL)
 		return;
+	w = grid->bits == 24 ? 6 : (grid->bits == 8) ? 2 : 1;
 	for (i = 0; i < grid->rows; i++) {
 		for (j = 0; j < grid->cols; j++)
-			printf("%0*x ",
-				grid->bits == 24 ? 6 : (grid->bits == 8) ? 2 :1,
-				grid->cell[i][j] & 0x00ffffff);
+			printf("%0*x ", w, grid->cell[i][j] & 0x00ffffff);
 		putchar('\n');
 	}
 	printf("%ubit cells, %u live\n", grid->bits, grid->live);
