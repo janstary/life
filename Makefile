@@ -17,9 +17,9 @@ lint: $(MAN)
 	mandoc -Tlint $(MAN)
 
 test: $(BIN)
-	./$(BIN) -b 10x10
-	./$(BIN) -g 10x10
-	./$(BIN) -c 10x10
+	./$(BIN) -G5 -b 10x10
+	./$(BIN) -G5 -g 10x10
+	./$(BIN) -G5 -c 10x10
 	#./$(BIN) life-50x10.in
 
 install: $(BIN) $(MAN)

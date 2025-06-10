@@ -8,11 +8,12 @@
 int nbits = 1;
 int kflag = 0;
 
-uint64_t backgen = 0;
-uint64_t stopgen = 0;
+uint32_t back = 0;
+uint32_t stop = 0;
 
 struct grid {
 	uint32_t bits;
+	uint32_t time;
 	uint32_t live;
 	uint32_t rows;
 	uint32_t cols;
@@ -70,7 +71,7 @@ prgrid(struct grid * grid)
 			printf("%0*x ", w, grid->cell[i][j] & 0x00ffffff);
 		putchar('\n');
 	}
-	printf("%ubit cells, %u live\n", grid->bits, grid->live);
+	printf("gen %u: %u live cells\n", grid->time, grid->live);
 }
 
 void
@@ -97,13 +98,17 @@ main(int argc, char** argv)
 			nbits = 1 * 1;
 			break;
 		case 'C':
-			backgen = strtonum(optarg, 1, 16, &e);
+			back = strtonum(optarg, 1, 16, &e);
+			if (e)
+				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'c':
 			nbits = 3 * 8;
 			break;
 		case 'G':
-			stopgen = strtonum(optarg, 1, UINT64_MAX, &e);
+			stop = strtonum(optarg, 1, UINT32_MAX, &e);
+			if (e)
+				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'g':
 			nbits = 1 * 8;
@@ -147,6 +152,13 @@ main(int argc, char** argv)
 			ofile = STDOUT_FILENO;
 		} else if ((ofile = open(argv[0], O_WRONLY)) > 0) {
 		}
+	}
+
+	while (grid->live) {
+		if (stop && (grid->time == stop))
+			break;
+		/*prgrid(grid);*/
+		grid->time++;
 	}
 
 	close(ifile);
