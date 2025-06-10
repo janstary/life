@@ -18,12 +18,45 @@ struct grid {
 	uint32_t rows;
 	uint32_t cols;
 	uint32_t **cell;
+	uint32_t **next;
 };
 
 struct grid*
-init_png(int ifile)
+init(uint32_t rows, uint32_t cols, int bits)
 {
-	return NULL;
+	uint32_t i;
+	struct grid * grid = NULL;
+	if ((grid = (struct grid *) calloc(1, sizeof(struct grid))) == NULL)
+		err(1, NULL);
+	if ((grid->cell = calloc(rows, sizeof(uint32_t*))) == NULL)
+		err(1, NULL);
+	for (i = 0; i < rows; i++) {
+		if ((grid->cell[i] = calloc(cols, sizeof(uint32_t))) == NULL)
+			err(1, NULL);
+	}
+	grid->rows = rows;
+	grid->cols = cols;
+	grid->bits = bits;
+	return grid;
+}
+
+struct grid*
+init_rand(uint32_t rows, uint32_t cols, int bits)
+{
+	uint32_t i, j, mask;
+	struct grid * grid = NULL;
+	if ((grid = init(rows, cols, bits)) == NULL)
+		return NULL;
+	mask = (bits == 1) ? 1 : (bits == 8 ? 0x000000ff : 0x00ffffff);
+	/* Init whole rows, regardless of bit width - there is nothing
+	 * to be gained by doing the random init by individual cells.
+	 * Then trim the irrelevant bits. */
+	for (i = 0; i < rows; i++) {
+		arc4random_buf(grid->cell[i], cols * sizeof(uint32_t));
+		for (j = 0; j < cols; j++)
+			grid->live += (grid->cell[i][j] &= mask) > 0;
+	}
+	return grid;
 }
 
 struct grid*
@@ -33,30 +66,22 @@ init_txt(int ifile)
 }
 
 struct grid*
-init_rand(uint32_t rows, uint32_t cols, int bits)
+init_png(int ifile)
 {
-	uint32_t i, j, mask;
-	struct grid * grid = NULL;
-	if ((grid = (struct grid *) calloc(1, sizeof(struct grid))) == NULL)
-		err(1, NULL);
-	grid->rows = rows;
-	grid->cols = cols;
-	grid->bits = bits;
-	mask = (bits == 1) ? 1 : (bits == 8 ? 0x000000ff : 0x00ffffff);
-	if ((grid->cell = calloc(rows, sizeof(uint32_t*))) == NULL)
-		err(1, NULL);
-	for (i = 0; i < rows; i++) {
-		if ((grid->cell[i] = calloc(cols, sizeof(uint32_t))) == NULL)
-			err(1, NULL);
-		/* Just init the whole array at first, regardless of
-		 * the number of bits; there is nothing to be gained by
-		 * doing the init by individual bits / bytes / tribytes. */
-		arc4random_buf(grid->cell[i], cols * sizeof(uint32_t));
-		/* and only then trim to the relevant bits */
-		for (j = 0; j < cols; j++)
-			grid->live += (grid->cell[i][j] &= mask) > 0;
-	}
-	return grid;
+	return NULL;
+}
+
+/* We need to make a copy of the entire grid,
+ * as rewriting the cells in place would
+ * alter the subsequent cells done later. */
+void
+step(struct grid * grid)
+{
+	if (grid == NULL)
+		return;
+	if (grid->live == 0)
+		return;
+	grid->time++;
 }
 
 void
@@ -157,10 +182,10 @@ main(int argc, char** argv)
 	while (grid->live) {
 		if (stop && (grid->time == stop))
 			break;
-		/*prgrid(grid);*/
-		grid->time++;
+		step(grid);
 	}
 
+	prgrid(grid);
 	close(ifile);
 	close(ofile);
 
