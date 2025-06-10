@@ -8,7 +8,7 @@
 .Nm
 .Op Fl bcgk
 .Op Fl C Ar num
-.\".Op Fl r Ar rules
+.Op Fl G Ar num
 .Op Ar input
 .Op Ar output
 .Sh DESCRIPTION
@@ -67,8 +67,6 @@ is considered to be a text file consisting of lines of chars:
 the space represents an empty cell and any other character a living cell.
 The grid size is inferred from the number of lines and line length.
 It is an error if the lines are not of equal length.
-.\" FIXME recognize each of CR, LF, and CRLF
-.\" FIXME Skip empty lines
 .Pp
 The game keeps running while at least one cell is alive,
 meaning at least one of the cell's values is non-zero.
@@ -82,6 +80,11 @@ generations to see if the population has entered a loop
 and will stop in that case (unless the
 .Fl k
 option is also given).
+With the
+.Fl G
+option,
+.Nm
+will stop after at most that many generations.
 .Pp
 If an
 .Ar output
