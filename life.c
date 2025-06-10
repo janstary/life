@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <err.h>
 
 int bflag = 1;
 int cflag = 0;
@@ -8,6 +10,12 @@ int kflag = 0;
 
 uint64_t backgen = 0;
 uint64_t stopgen = 0;
+
+void
+usage()
+{
+	errx(1, "life [-C num] [-G num] [-bcgk] input [output]");
+}
 
 int
 main(int argc, char** argv)
@@ -35,6 +43,11 @@ main(int argc, char** argv)
 			kflag = 0;
 			break;
 	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc == 0)
+		usage();
 
 	return 0;
 }
