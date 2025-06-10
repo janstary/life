@@ -6,17 +6,16 @@
 .Nd Game of Life
 .Sh SYNOPSIS
 .Nm
-.Op Fl bcgk
 .Op Fl C Ar num
 .Op Fl G Ar num
-.Op Ar input
+.Op Fl bcgk
+.Ar input
 .Op Ar output
 .Sh DESCRIPTION
 .Nm
 acts out the Game of Life:
 cells live in a grid on the surface of a torus
-according to certain evolution rules.
-.Pp
+according to evolution rules.
 By default, the grid is binary: a cell is either living or dead.
 A dead cell surrounded by exactly two living neighbours becomes alive;
 a living cell surrounded by less then two or more than three neigbours dies.
@@ -40,7 +39,7 @@ with respect to the neigbours' red, green and blue values.
 The
 .Ar input
 is either a size description such as
-.Sq 10x10
+.Sq 200x100
 meaning width and height,
 or a text file or PNG file describing the initial population.
 .Pp
@@ -116,6 +115,10 @@ previous generations
 and stop if an evolution loop is found, unless
 .Fl k
 is also specified.
+.It Fl G Ar num
+Stop after
+.Ar num
+generations.
 .It Fl b
 Use a binary grid.
 This is the default.
@@ -128,6 +131,5 @@ Keep running even if an evolution loop is found with the
 .Fl C
 option; however, stop writing output once the loop is entered.
 .El
-.\".Sh EXAMPLES
 .Sh AUTHORS
 .An Jan Starý Aq Mt hans@stare.cz
