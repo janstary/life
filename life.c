@@ -1,18 +1,81 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <err.h>
 
-int bflag = 1;
-int cflag = 0;
-int gflag = 0;
+int nbits = 1;
 int kflag = 0;
 
 uint64_t backgen = 0;
 uint64_t stopgen = 0;
 
+struct grid {
+	uint32_t bits;
+	uint32_t live;
+	uint32_t rows;
+	uint32_t cols;
+	uint32_t **cell;
+};
+
+struct grid*
+init_png(int ifile)
+{
+	return NULL;
+}
+
+struct grid*
+init_txt(int ifile)
+{
+	return NULL;
+}
+
+struct grid*
+init_rand(uint32_t rows, uint32_t cols, int bits)
+{
+	uint32_t i, j, mask;
+	struct grid * grid = NULL;
+	if ((grid = (struct grid *) calloc(1, sizeof(struct grid))) == NULL)
+		err(1, NULL);
+	grid->rows = rows;
+	grid->cols = cols;
+	grid->bits = bits;
+	mask = (bits == 1) ? 1 : (bits == 8 ? 0x000000ff : 0x00ffffff);
+	if ((grid->cell = calloc(rows, sizeof(uint32_t*))) == NULL)
+		err(1, NULL);
+	for (i = 0; i < rows; i++) {
+		if ((grid->cell[i] = calloc(cols, sizeof(uint32_t))) == NULL)
+			err(1, NULL);
+		/* Just init the whole array at first, regardless of
+		 * the number of bits; there is nothing to be gained by
+		 * doing the init by individual bits / bytes / tribytes. */
+		arc4random_buf(grid->cell[i], cols * sizeof(uint32_t));
+		/* and only then trim to the relevant bits */
+		for (j = 0; j < cols; j++)
+			grid->live += (grid->cell[i][j] &= mask) > 0;
+	}
+	return grid;
+}
+
 void
-usage()
+prgrid(struct grid * grid)
+{
+	uint32_t i, j;
+	if (grid == NULL)
+		return;
+	for (i = 0; i < grid->rows; i++) {
+		for (j = 0; j < grid->cols; j++)
+			printf("%0*x ",
+				grid->bits == 24 ? 6 : (grid->bits == 8) ? 2 :1,
+				grid->cell[i][j] & 0x00ffffff);
+		putchar('\n');
+	}
+	printf("%ubit cells, %u live\n", grid->bits, grid->live);
+}
+
+void
+usage(void)
 {
 	errx(1, "life [-C num] [-G num] [-bcgk] input [output]");
 }
@@ -21,23 +84,29 @@ int
 main(int argc, char** argv)
 {
 	int c;
-	const char* e = NULL;
+	char *p = NULL;
+	int ifile, ofile;
+	const char * e = NULL;
+	struct grid * grid = NULL;
+
+	uint32_t w = 0;
+	uint32_t h = 0;
 
 	while ((c = getopt(argc, argv, "bC:cG:gk")) != -1) switch (c) {
 		case 'b':
-			bflag = 1;
+			nbits = 1 * 1;
 			break;
 		case 'C':
 			backgen = strtonum(optarg, 1, 16, &e);
 			break;
 		case 'c':
-			cflag = 0;
+			nbits = 3 * 8;
 			break;
 		case 'G':
 			stopgen = strtonum(optarg, 1, UINT64_MAX, &e);
 			break;
 		case 'g':
-			gflag = 0;
+			nbits = 1 * 8;
 			break;
 		case 'k':
 			kflag = 0;
@@ -46,8 +115,39 @@ main(int argc, char** argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc == 0)
+	if (argc == 0 || argc > 2)
 		usage();
+
+	if (argc--) {
+		if (strncmp("-", argv[0], 2) == 0) {
+			ifile = STDIN_FILENO;
+		} else if ((ifile = open(argv[0], O_RDONLY)) > 0) {
+			if ( (p = strrchr(argv[0], '.'))
+			&& (strncmp("png", ++p, 4) == 0) ) {
+				/* init_png(); */
+			} else {
+				/* init_txt(); */
+			}
+		} else {
+			if ((p = strchr(argv[0], 'x')) == NULL)
+				errx(1, "%s is not a WxH size", argv[0]);
+			*p++ = '\0';
+			if ((0 == (w=strtonum(argv[0],1,UINT32_MAX, &e))) && e)
+				errx(1, "%s is not a width", argv[0]);
+			if ((0 == (h = strtonum(p, 1, UINT32_MAX, &e))) && e)
+				errx(1, "%s is not a height", p);
+			if ((grid = init_rand(h, w, nbits)) == NULL)
+				errx(1, "Cannot init random %ux%u grid", w, h);
+			prgrid(grid);
+		}
+	}
+
+	if (argc--) {
+		if (strncmp("-", argv[0], 2)) {
+			ofile = STDOUT_FILENO;
+		} else if ((ofile = open(argv[0], O_WRONLY)) > 0) {
+		}
+	}
 
 	return 0;
 }

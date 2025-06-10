@@ -59,7 +59,7 @@ If
 .Ar input
 is a PNG file, the grid size is inferred from the image size
 and gets populated with the values of the image's pixels.
-The bit depth determines the binary, gray or color grid.
+The bit depth determines a binary, gray or color grid.
 Otherwise,
 .Ar input
 is considered to be a text file consisting of lines of chars:
@@ -90,12 +90,12 @@ If an
 file is specified,
 .Nm
 will save the final population.
-A file name ending with either
-.Sq txt
-or
+A file name ending with
 .Sq png
-will determine the format.
-Otherwise, the output format will be that of the input.
+determines the PNG format.
+Otherwise, the output format will be textual.
+.Nm
+overwrites the output file without warning.
 .Pp
 As a special case, an
 .Ar input

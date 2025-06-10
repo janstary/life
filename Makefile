@@ -8,6 +8,8 @@ PREFIX	= $(HOME)
 BINDIR	= $(PREFIX)/bin/
 MANDIR	= $(PREFIX)/man/man1
 
+all: $(BIN)
+
 $(BIN): $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $(BIN) $(OBJS)
 
@@ -15,7 +17,10 @@ lint: $(MAN)
 	mandoc -Tlint $(MAN)
 
 test: $(BIN)
-	./$(BIN) -G1
+	./$(BIN) -b 10x10
+	./$(BIN) -g 10x10
+	./$(BIN) -c 10x10
+	#./$(BIN) life-50x10.in
 
 install: $(BIN) $(MAN)
 	install -d -m 755 $(BINDIR) && install -m 755 $(BIN) $(BINDIR)
