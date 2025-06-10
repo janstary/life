@@ -1,0 +1,132 @@
+.Dd June 9, 2025
+.Dt LIFE 1
+.Os
+.Sh NAME
+.Nm life
+.Nd Game of Life
+.Sh SYNOPSIS
+.Nm
+.Op Fl bcgk
+.Op Fl C Ar num
+.\".Op Fl r Ar rules
+.Op Ar input
+.Op Ar output
+.Sh DESCRIPTION
+.Nm
+acts out the Game of Life:
+cells live in a grid on the surface of a torus
+according to certain evolution rules.
+.Pp
+By default, the grid is binary: a cell is either living or dead.
+A dead cell surrounded by exactly two living neighbours becomes alive;
+a living cell surrounded by less then two or more than three neigbours dies.
+.Pp
+With the
+.Fl g
+option, the cells are eight-bit cells representing shades of gray.
+.\"FIXME explain the modified rules
+.Pp
+With the
+.Fl c
+option, the same happens in color:
+a cell consist of three eight-bit numbers, representing red, green and blue,
+each of them living according to the above evolution rules
+with respect to the neigbours' red, green and blue values.
+.Pp
+The
+.Ar input
+is either a size description such as
+.Sq 10x10
+meaning width and height,
+or a text file or PNG file describing the initial population.
+.Pp
+With a size description,
+.Nm
+will start with a randomly populated grid.
+This means a random binary grid for the
+.Fl b
+option (which is the default),
+random values between 0 and 255 for the
+.Fl g
+option, and three random values for RGB for the
+.Fl c
+option.
+.\" FIXME options to tweak the probabilities
+.Pp
+If
+.Ar input
+is a PNG file, the grid size is inferred from the image size
+and gets populated with the values of the image's pixels.
+Otherwise,
+.Ar input
+is considered to be a text file consisting of lines of chars:
+the space represents an empty cell and any other character a living cell.
+The grid size is inferred from the number of lines and line length.
+It is an error if the lines are not of equal length.
+.\" FIXME recognize each of CR, LF, and CRLF
+.\" FIXME Skip empty lines
+.Pp
+The game keeps running while at least one cell is alive,
+meaning at least one of the cell's values is non-zero.
+With the
+.Fl C Ar num
+option,
+.Nm
+will check the previous
+.Ar num
+generations to see if the population has entered a loop
+and will stop in that case (unless the
+.Fl k
+option is also given).
+.Pp
+If an
+.Ar output
+file is specified,
+.Nm
+will save the final population.
+A file name ending with either
+.Sq txt
+or
+.Sq png
+will determine the format.
+Otherwise, the output format will be that of the input.
+.\" FIXME for mng or some other animation format,
+.\" save an animstion of ther entire history.
+.\" With -C, have a tail loop of that many generations
+.Pp
+As a special case, an
+.Ar input
+or an
+.Ar output
+file name of
+.Sq -
+is recognized to mean standard input and standard output, respectively.
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -width Ds -compact
+.It Fl C Ar num
+Compare every generation to each of
+.Ar num
+previous generations
+and stop if an evolution loop is found, unless
+.Fl k
+is also specified.
+.It Fl b
+Use a binary grid.
+This is the default.
+.\"Even if the input is a RGB file,
+.\"the initial population is converted to 0/1
+.\"and the output, if any, will be binary.
+.It Fl c
+Use a color grid.
+.It Fl g
+Use a gray grid.
+.It Fl k
+Keep running even if an evolution loop is found with the
+.Fl C
+option; however, stop writing output once the loop is entered.
+.El
+.\".Sh EXAMPLES
+.Sh AUTHORS
+.An Jan Starý Aq Mt hans@stare.cz
