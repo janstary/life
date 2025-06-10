@@ -14,6 +14,9 @@ $(BIN): $(OBJS)
 lint: $(MAN)
 	mandoc -Tlint $(MAN)
 
+test: $(BIN)
+	./$(BIN) -G1
+
 install: $(BIN) $(MAN)
 	install -d -m 755 $(BINDIR) && install -m 755 $(BIN) $(BINDIR)
 	install -d -m 755 $(BINDIR) && install -m 644 $(MAN) $(MANDIR)
