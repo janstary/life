@@ -84,7 +84,8 @@ main(int argc, char** argv)
 {
 	int c;
 	char *p = NULL;
-	int ifile, ofile;
+	int ifile = -1;
+	int ofile = -1;
 	const char * e = NULL;
 	struct grid * grid = NULL;
 
@@ -147,6 +148,9 @@ main(int argc, char** argv)
 		} else if ((ofile = open(argv[0], O_WRONLY)) > 0) {
 		}
 	}
+
+	close(ifile);
+	close(ofile);
 
 	return 0;
 }
