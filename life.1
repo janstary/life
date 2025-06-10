@@ -23,8 +23,12 @@ a living cell surrounded by less then two or more than three neigbours dies.
 .Pp
 With the
 .Fl g
-option, the cells are eight-bit cells representing shades of gray.
-.\"FIXME explain the modified rules
+option, the cells are eight-bit values representing shades of gray
+as a number between 0 and 255.
+If the cell's neighbours' values sum up to less than 1*255
+or more than 4*255, the cell's value is decremented (if possible).
+If the neighbours' values sum up to more than 2*255 but less than 3*255,
+the cell's value is incremented (if possible).
 .Pp
 With the
 .Fl c
