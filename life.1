@@ -60,6 +60,7 @@ If
 .Ar input
 is a PNG file, the grid size is inferred from the image size
 and gets populated with the values of the image's pixels.
+The bit depth determines the binary, gray or color grid.
 Otherwise,
 .Ar input
 is considered to be a text file consisting of lines of chars:
@@ -93,9 +94,6 @@ or
 .Sq png
 will determine the format.
 Otherwise, the output format will be that of the input.
-.\" FIXME for mng or some other animation format,
-.\" save an animstion of ther entire history.
-.\" With -C, have a tail loop of that many generations
 .Pp
 As a special case, an
 .Ar input
@@ -118,9 +116,6 @@ is also specified.
 .It Fl b
 Use a binary grid.
 This is the default.
-.\"Even if the input is a RGB file,
-.\"the initial population is converted to 0/1
-.\"and the output, if any, will be binary.
 .It Fl c
 Use a color grid.
 .It Fl g
