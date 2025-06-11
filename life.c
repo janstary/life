@@ -10,7 +10,7 @@ int loop = 1;
 int less = 2;
 int more = 3;
 
-uint32_t back = 0;
+uint32_t hist = 0;
 uint32_t stop = 0;
 
 struct grid {
@@ -35,7 +35,7 @@ prgrid(struct grid * grid)
 			printf("%0*x ", w, grid->cell[i][j]);
 		putchar('\n');
 	}
-	printf("gen %u: %u live cells\n", grid->time, grid->live);
+	/*printf("gen %u: %u live cells\n", grid->time, grid->live);*/
 }
 
 struct grid*
@@ -179,7 +179,7 @@ main(int argc, char** argv)
 				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'c':
-			if (((back = strtonum(optarg, 1, 16, &e)) == 0) && e)
+			if (((hist = strtonum(optarg, 1, 16, &e)) == 0) && e)
 				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'g':
