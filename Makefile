@@ -22,7 +22,7 @@ test: $(BIN)
 	./$(BIN) -G5 -c 10x10
 	#./$(BIN) life-50x10.in
 
-install: $(BIN) $(MAN)
+install: $(BIN) $(MAN) test
 	install -d -m 755 $(BINDIR) && install -m 755 $(BIN) $(BINDIR)
 	install -d -m 755 $(BINDIR) && install -m 644 $(MAN) $(MANDIR)
 
