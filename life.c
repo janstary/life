@@ -29,7 +29,7 @@ prgrid(struct grid * grid)
 	uint32_t i, j, w;
 	if (grid == NULL)
 		return;
-	w = (grid->bits / 4) + 1; /* FIXME */
+	w = ((grid->bits - 1) / 4) + 1;
 	for (i = 0; i < grid->rows; i++) {
 		for (j = 0; j < grid->cols; j++)
 			printf("%0*x ", w, grid->cell[i][j]);
