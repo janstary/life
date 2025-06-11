@@ -21,6 +21,21 @@ struct grid {
 	uint32_t **next;
 };
 
+void
+prgrid(struct grid * grid)
+{
+	uint32_t i, j, w;
+	if (grid == NULL)
+		return;
+	w = grid->bits == 24 ? 6 : (grid->bits == 8) ? 2 : 1;
+	for (i = 0; i < grid->rows; i++) {
+		for (j = 0; j < grid->cols; j++)
+			printf("%0*x ", w, grid->cell[i][j] & 0x00ffffff);
+		putchar('\n');
+	}
+	printf("gen %u: %u live cells\n", grid->time, grid->live);
+}
+
 struct grid*
 init(uint32_t rows, uint32_t cols, int bits)
 {
@@ -30,8 +45,12 @@ init(uint32_t rows, uint32_t cols, int bits)
 		err(1, NULL);
 	if ((grid->cell = calloc(rows, sizeof(uint32_t*))) == NULL)
 		err(1, NULL);
+	if ((grid->next = calloc(rows, sizeof(uint32_t*))) == NULL)
+		err(1, NULL);
 	for (i = 0; i < rows; i++) {
 		if ((grid->cell[i] = calloc(cols, sizeof(uint32_t))) == NULL)
+			err(1, NULL);
+		if ((grid->next[i] = calloc(cols, sizeof(uint32_t))) == NULL)
 			err(1, NULL);
 	}
 	grid->rows = rows;
@@ -71,32 +90,57 @@ init_png(int ifile)
 	return NULL;
 }
 
-/* We need to make a copy of the entire grid,
- * as rewriting the cells in place would
- * alter the subsequent cells done later. */
+/* Rewriting the cells in place would alter the subsequent cells,
+ * so make a copy of the entire grid in grid->next. */
 void
 step(struct grid * grid)
 {
+	uint32_t nbhd = 0;
+	uint32_t less = 2;
+	uint32_t more = 3;
+	uint32_t r, c, pr, pc, nr, nc;
+
 	if (grid == NULL)
 		return;
 	if (grid->live == 0)
 		return;
 	grid->time++;
-}
-
-void
-prgrid(struct grid * grid)
-{
-	uint32_t i, j, w;
-	if (grid == NULL)
-		return;
-	w = grid->bits == 24 ? 6 : (grid->bits == 8) ? 2 : 1;
-	for (i = 0; i < grid->rows; i++) {
-		for (j = 0; j < grid->cols; j++)
-			printf("%0*x ", w, grid->cell[i][j] & 0x00ffffff);
-		putchar('\n');
+	for (r = 0; r < grid->rows; r++) {
+		for (c = 0; c < grid->cols; c++) {
+			pr = r > 0 ? r - 1 : grid->rows - 1;
+			pc = c > 0 ? c - 1 : grid->cols - 1;
+			nr = (r + 1) % grid->rows;
+			nc = (c + 1) % grid->cols;
+			/* All of the following has to be done separately
+			 * for each of the three bytes. */
+			nbhd =
+		grid->cell[pr][pc] + grid->cell[pr][c] + grid->cell[pr][nc] +
+		grid->cell[ r][pc]                     + grid->cell[ r][nc] +
+		grid->cell[nr][pc] + grid->cell[nr][c] + grid->cell[nr][nc] ;
+			printf("%u,%u has %u\n", r, c, nbhd);
+			if (grid->cell[r][c] &&
+			((nbhd > more) || (nbhd < less))) {
+				/* a living cell dies */
+				printf("%u,%u is live and dies\n", r, c);
+				grid->next[r][c] = grid->cell[r][c] - 1;
+			} else if ((grid->cell[r][c] == 0) && (nbhd == less)) {
+				/* an empty cell comes to life */
+				printf("%u,%u is empty and is born\n", r, c);
+				grid->next[r][c] = grid->cell[r][c] + 1;
+			} else {
+				printf("%u,%u stays the same\n", r, c);
+				grid->next[r][c] = grid->cell[r][c];
+			}
+		}
 	}
-	printf("gen %u: %u live cells\n", grid->time, grid->live);
+	grid->live = 0;
+	for (r = 0; r < grid->rows; r++) {
+		for (c = 0; c < grid->cols; c++) {
+			/* FIXME: copy whole rows with memcpy() */
+			if ((grid->cell[r][c] = grid->next[r][c]))
+				grid->live++;
+		}
+	}
 }
 
 void
@@ -168,7 +212,6 @@ main(int argc, char** argv)
 				errx(1, "%s is not a height", p);
 			if ((grid = init_rand(h, w, nbits)) == NULL)
 				errx(1, "Cannot init random %ux%u grid", w, h);
-			prgrid(grid);
 		}
 	}
 
@@ -179,13 +222,14 @@ main(int argc, char** argv)
 		}
 	}
 
+	prgrid(grid);
 	while (grid->live) {
 		if (stop && (grid->time == stop))
 			break;
 		step(grid);
+		prgrid(grid);
 	}
 
-	prgrid(grid);
 	close(ifile);
 	close(ofile);
 
