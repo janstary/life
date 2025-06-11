@@ -17,10 +17,14 @@ lint: $(MAN)
 	mandoc -Tlint $(MAN)
 
 test: $(BIN)
-	./$(BIN) -G5 -b 10x10
-	./$(BIN) -G5 -g 10x10
-	./$(BIN) -G5 -c 10x10
-	#./$(BIN) life-50x10.in
+	./$(BIN) -g 5 -b 1 5x5
+	./$(BIN) -g 5 -b 2 5x5
+	./$(BIN) -g 5 -b 3 5x5
+	./$(BIN) -g 5 -b 4 5x5
+	./$(BIN) -g 5 -b 5 5x5
+	./$(BIN) -g 5 -b 6 5x5
+	./$(BIN) -g 5 -b 7 5x5
+	./$(BIN) -g 5 -b 8 5x5
 
 install: $(BIN) $(MAN) test
 	install -d -m 755 $(BINDIR) && install -m 755 $(BIN) $(BINDIR)

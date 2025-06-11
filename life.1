@@ -1,4 +1,4 @@
-.Dd June 9, 2025
+.Dd June 11, 2025
 .Dt LIFE 1
 .Os
 .Sh NAME
@@ -6,9 +6,10 @@
 .Nd Game of Life
 .Sh SYNOPSIS
 .Nm
-.Op Fl C Ar num
-.Op Fl G Ar num
-.Op Fl bcgk
+.Op Fl b Ar bits
+.Op Fl c Ar num
+.Op Fl g Ar num
+.Op Fl l Ar num
 .Ar input
 .Op Ar output
 .Sh DESCRIPTION
@@ -19,71 +20,46 @@ according to evolution rules.
 By default, the grid is binary: a cell is either living or dead.
 A dead cell surrounded by exactly two living neighbours becomes alive;
 a living cell surrounded by less then two or more than three neigbours dies.
-.Pp
 With the
-.Fl g
-option, the cells are eight-bit values representing shades of gray
-as a number between 0 and 255.
-If the cell's neighbours' values sum up to less than 1*255
-or more than 4*255, the cell's value is decremented (if possible).
-If the neighbours' values sum up to more than 2*255 but less than 3*255,
-the cell's value is incremented (if possible).
+.Fl b Ar bits
+option, the cells consist of that many
+.Ar bits
+and the game is played at every bit.
 .Pp
-With the
-.Fl c
-option, the same happens in color:
-a cell consist of three eight-bit numbers, representing red, green and blue,
-each of them living according to the above evolution rules
-with respect to the neigbours' red, green and blue values.
+With the default of one bit,
+the grid is displayed as a monochrome image.
+With more than one but at most eight bits,
+the grid is displayed in shades of gray.
+With more than eight but at most twenty four bits,
+the grid is displayed in RGB.
+With more than twenty four but at most thirty two bits,
+the remaining eight bits are interpreterd as transparency.
 .Pp
 The
 .Ar input
 is either a size description such as
-.Sq 200x100
+.Sq 200x100 ,
 meaning width and height,
 or a text file or PNG file describing the initial population.
-.Pp
 With a size description,
 .Nm
 will start with a randomly populated grid.
-This means a uniformly random binary grid for the
-.Fl b
-option (which is the default),
-uniformly random values between 0 and 255 for the
-.Fl g
-option, and three uniformly random values for RGB for the
-.Fl c
-option.
 .Pp
 If
 .Ar input
 is a PNG file, the grid size is inferred from the image size
 and gets populated with the values of the image's pixels.
-The bit depth determines a binary, gray or color grid.
 Otherwise,
 .Ar input
-is considered to be a text file consisting of lines of chars:
-the space represents an empty cell and any other character a living cell.
-The grid size is inferred from the number of lines and line length.
-It is an error if the lines are not of equal length.
-.Pp
-The game keeps running while at least one cell is alive,
-meaning at least one of the cell's values is non-zero.
-With the
-.Fl C Ar num
-option,
-.Nm
-will check the previous
-.Ar num
-generations to see if the population has entered a loop
-and will stop in that case (unless the
-.Fl k
-option is also given).
-With the
-.Fl G
-option,
-.Nm
-will stop after at most that many generations.
+is considered to be a text file
+consisting of lines of numbers, separated by whitespace.
+The numbers represent the initial content of the cells.
+The number of bits is chosen to accomodate the highest number seen,
+but can be overwritten with the
+.Fl b
+option.
+The grid size is inferred from the number of lines and numbers.
+The lines are required to contains the same number of values.
 .Pp
 If an
 .Ar output
@@ -96,7 +72,6 @@ determines the PNG format.
 Otherwise, the output format will be textual.
 .Nm
 overwrites the output file without warning.
-.Pp
 As a special case, an
 .Ar input
 or an
@@ -105,31 +80,43 @@ file name of
 .Sq -
 is recognized to mean standard input and standard output, respectively.
 .Pp
+The game keeps running while at least one cell is alive,
+meaning at least one of the cell's bits is non-zero.
+With the
+.Fl g
+option,
+.Nm
+will stop after at most that many generations.
+With the
+.Fl c Ar num
+option,
+.Nm
+will check the previous
+.Ar num
+generations to see if the evolution has entered a loop
+and will stop writing the output in that case.
+By default,
+.Nm
+will continue to run even after a loop is entered;
+use the
+.Fl l
+option to exit instead.
+.Pp
 The options are as follows:
 .Pp
-.Bl -tag -width xCxnum -compact
-.It Fl C Ar num
-Compare every generation to each of
+.Bl -tag -width xbxbits -compact
+.It Fl b Ar bits
+Use this many bits (32 at the most).
+.It Fl c Ar num
+Consider
 .Ar num
-previous generations
-and stop if an evolution loop is found, unless
-.Fl k
-is also specified.
-.It Fl G Ar num
+previous generations to detect a loop.
+.It Fl g Ar num
 Stop after
 .Ar num
 generations.
-.It Fl b
-Use a binary grid.
-This is the default.
-.It Fl c
-Use a color grid.
-.It Fl g
-Use a gray grid.
-.It Fl k
-Keep running even if an evolution loop is found with the
-.Fl C
-option; however, stop writing output once the loop is entered.
+.It Fl l
+Stop once a loop is detected.
 .El
 .Sh AUTHORS
 .An Jan Starý Aq Mt hans@stare.cz

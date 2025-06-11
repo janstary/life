@@ -5,8 +5,10 @@
 #include <fcntl.h>
 #include <err.h>
 
-int nbits = 1;
-int kflag = 0;
+int bits = 1;
+int loop = 1;
+int less = 2;
+int more = 3;
 
 uint32_t back = 0;
 uint32_t stop = 0;
@@ -27,10 +29,10 @@ prgrid(struct grid * grid)
 	uint32_t i, j, w;
 	if (grid == NULL)
 		return;
-	w = grid->bits == 24 ? 6 : (grid->bits == 8) ? 2 : 1;
+	w = (grid->bits / 4) + 1; /* FIXME */
 	for (i = 0; i < grid->rows; i++) {
 		for (j = 0; j < grid->cols; j++)
-			printf("%0*x ", w, grid->cell[i][j] & 0x00ffffff);
+			printf("%0*x ", w, grid->cell[i][j]);
 		putchar('\n');
 	}
 	printf("gen %u: %u live cells\n", grid->time, grid->live);
@@ -66,10 +68,9 @@ init_rand(uint32_t rows, uint32_t cols, int bits)
 	struct grid * grid = NULL;
 	if ((grid = init(rows, cols, bits)) == NULL)
 		return NULL;
-	mask = (bits == 1) ? 1 : (bits == 8 ? 0x000000ff : 0x00ffffff);
+	mask = (1 << bits) - 1;
 	/* Init whole rows, regardless of bit width - there is nothing
-	 * to be gained by doing the random init by individual cells.
-	 * Then trim the irrelevant bits. */
+	 * to be gained by doing the random init by individual cells. */
 	for (i = 0; i < rows; i++) {
 		arc4random_buf(grid->cell[i], cols * sizeof(uint32_t));
 		for (j = 0; j < cols; j++)
@@ -90,53 +91,63 @@ init_png(int ifile)
 	return NULL;
 }
 
-/* Rewriting the cells in place would alter the subsequent cells,
- * so make a copy of the entire grid in grid->next. */
+void
+bstep(struct grid * grid, uint32_t r, uint32_t c, unsigned b)
+{
+	uint32_t mask = 0;
+	uint32_t nbhd = 0;
+	uint32_t pr, pc, nr, nc;
+
+	pr = r > 0 ? r - 1 : grid->rows - 1;
+	pc = c > 0 ? c - 1 : grid->cols - 1;
+	nr = (r + 1) % grid->rows;
+	nc = (c + 1) % grid->cols;
+	mask = 1 << b;
+	nbhd =  (
+		(grid->cell[pr][pc] & mask) +
+		(grid->cell[pr][ c] & mask) +
+		(grid->cell[pr][nc] & mask) +
+		(grid->cell[ r][pc] & mask) +
+		(grid->cell[ r][nc] & mask) +
+		(grid->cell[nr][pc] & mask) +
+		(grid->cell[nr][ c] & mask) +
+		(grid->cell[nr][nc] & mask) )
+		>> b;
+	/*printf("(%u,%u)[%u] has %u\n", r, c, b, nbhd);*/
+	if (nbhd == less) {
+		grid->next[r][c] |= mask;
+	} else if ((nbhd < less) || (nbhd > more)) {
+		grid->next[r][c] &= ~mask;
+	}
+}
+
+void
+cstep(struct grid * grid, uint32_t r, uint32_t c)
+{
+	unsigned b;
+	grid->next[r][c] = grid->cell[r][c];
+	/* FIXME: copy whole rows with memset() */
+	for (b = 0; b < grid->bits; b++)
+		bstep(grid, r, c, b);
+}
+
 void
 step(struct grid * grid)
 {
-	uint32_t nbhd = 0;
-	uint32_t less = 2;
-	uint32_t more = 3;
-	uint32_t r, c, pr, pc, nr, nc;
-
+	uint32_t r, c;
 	if (grid == NULL)
 		return;
 	if (grid->live == 0)
 		return;
 	grid->time++;
-	for (r = 0; r < grid->rows; r++) {
-		for (c = 0; c < grid->cols; c++) {
-			pr = r > 0 ? r - 1 : grid->rows - 1;
-			pc = c > 0 ? c - 1 : grid->cols - 1;
-			nr = (r + 1) % grid->rows;
-			nc = (c + 1) % grid->cols;
-			/* All of the following has to be done separately
-			 * for each of the three bytes. */
-			nbhd =
-		grid->cell[pr][pc] + grid->cell[pr][c] + grid->cell[pr][nc] +
-		grid->cell[ r][pc]                     + grid->cell[ r][nc] +
-		grid->cell[nr][pc] + grid->cell[nr][c] + grid->cell[nr][nc] ;
-			printf("%u,%u has %u\n", r, c, nbhd);
-			if (grid->cell[r][c] &&
-			((nbhd > more) || (nbhd < less))) {
-				/* a living cell dies */
-				printf("%u,%u is live and dies\n", r, c);
-				grid->next[r][c] = grid->cell[r][c] - 1;
-			} else if ((grid->cell[r][c] == 0) && (nbhd == less)) {
-				/* an empty cell comes to life */
-				printf("%u,%u is empty and is born\n", r, c);
-				grid->next[r][c] = grid->cell[r][c] + 1;
-			} else {
-				printf("%u,%u stays the same\n", r, c);
-				grid->next[r][c] = grid->cell[r][c];
-			}
-		}
-	}
 	grid->live = 0;
+	for (r = 0; r < grid->rows; r++)
+		for (c = 0; c < grid->cols; c++)
+			cstep(grid, r, c);
 	for (r = 0; r < grid->rows; r++) {
 		for (c = 0; c < grid->cols; c++) {
-			/* FIXME: copy whole rows with memcpy() */
+			/* FIXME: copy whole rows with memcpy()
+			 * That means do live++ inside cstep(). */
 			if ((grid->cell[r][c] = grid->next[r][c]))
 				grid->live++;
 		}
@@ -146,7 +157,7 @@ step(struct grid * grid)
 void
 usage(void)
 {
-	errx(1, "life [-C num] [-G num] [-bcgk] input [output]");
+	errx(1, "life [-b bits] [-c num] [-g num] input [output]");
 }
 
 int
@@ -162,28 +173,21 @@ main(int argc, char** argv)
 	uint32_t w = 0;
 	uint32_t h = 0;
 
-	while ((c = getopt(argc, argv, "bC:cG:gk")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "b:c:g:l")) != -1) switch (c) {
 		case 'b':
-			nbits = 1 * 1;
-			break;
-		case 'C':
-			back = strtonum(optarg, 1, 16, &e);
-			if (e)
+			if (((bits = strtonum(optarg, 1, 32, &e)) == 0) && e)
 				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'c':
-			nbits = 3 * 8;
-			break;
-		case 'G':
-			stop = strtonum(optarg, 1, UINT32_MAX, &e);
-			if (e)
+			if (((back = strtonum(optarg, 1, 16, &e)) == 0) && e)
 				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'g':
-			nbits = 1 * 8;
+			if (((stop = strtonum(optarg,1,UINT32_MAX,&e))==0) && e)
+				errx(1, "%s is %s", optarg, e);
 			break;
-		case 'k':
-			kflag = 0;
+		case 'l':
+			loop = 0;
 			break;
 	}
 	argc -= optind;
@@ -210,7 +214,7 @@ main(int argc, char** argv)
 				errx(1, "%s is not a width", argv[0]);
 			if ((0 == (h = strtonum(p, 1, UINT32_MAX, &e))) && e)
 				errx(1, "%s is not a height", p);
-			if ((grid = init_rand(h, w, nbits)) == NULL)
+			if ((grid = init_rand(h, w, bits)) == NULL)
 				errx(1, "Cannot init random %ux%u grid", w, h);
 		}
 	}
