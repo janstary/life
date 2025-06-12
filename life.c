@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -184,7 +183,7 @@ main(int argc, char** argv)
 				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'g':
-			if (((stop = strtonum(optarg,1,UINT32_MAX,&e))==0) && e)
+			if (((stop = strtonum(optarg, 1, 1000, &e))==0) && e)
 				errx(1, "%s is %s", optarg, e);
 			break;
 		case 'l':
@@ -211,9 +210,9 @@ main(int argc, char** argv)
 			if ((p = strchr(argv[0], 'x')) == NULL)
 				errx(1, "%s is not a WxH size", argv[0]);
 			*p++ = '\0';
-			if ((0 == (w=strtonum(argv[0],3,UINT32_MAX, &e))) && e)
+			if ((0 == (w = strtonum(argv[0], 3, 8192, &e))) && e)
 				errx(1, "%s is %s", argv[0], e);
-			if ((0 == (h = strtonum(p, 3, UINT32_MAX, &e))) && e)
+			if ((0 == (h = strtonum(p, 3, 8192, &e))) && e)
 				errx(1, "%s is %s", p, e);
 			if ((grid = init_rand(h, w, bits)) == NULL)
 				errx(1, "Cannot init random %ux%u grid", w, h);
