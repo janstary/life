@@ -17,6 +17,10 @@ lint: $(MAN)
 	mandoc -Tlint $(MAN)
 
 test: $(BIN)
+	./$(BIN)       full-5x5.in
+	./$(BIN)      empty-5x5.in
+	./$(BIN) -g 1 rigid-5x5.in
+	./$(BIN) -g 3  loop-5x5.in
 	./$(BIN) -g 1 -b 1  5x5
 	./$(BIN) -g 1 -b 4  5x5
 	./$(BIN) -g 1 -b 5  5x5
