@@ -25,15 +25,15 @@ With the
 option, the cells consist of that many
 .Ar bits
 and the game is played at every bit.
-.Pp
-With the default of one bit,
-the grid is displayed as a monochrome image.
-With more than one but at most eight bits,
-the grid is displayed in shades of gray.
-With more than eight but at most twenty four bits,
-the grid is displayed in RGB.
-With more than twenty four but at most thirty two bits,
-the remaining eight bits are interpreterd as transparency.
+'\".Pp
+'\"With the default of one bit,
+'\"the grid is displayed as a monochrome image.
+'\"With more than one but at most eight bits,
+'\"the grid is displayed in shades of gray.
+'\"With more than eight but at most twenty four bits,
+'\"the grid is displayed in RGB.
+'\"With more than twenty four but at most thirty two bits,
+'\"the remaining eight bits are interpreterd as transparency.
 .Pp
 The
 .Ar input
@@ -53,19 +53,43 @@ Otherwise,
 .Ar input
 is considered to be a text file
 consisting of lines of numbers, separated by whitespace.
-The numbers represent the initial content of the cells.
+representing the initial contents of the cells.
 The number of bits is chosen to accomodate the highest number seen,
 but can be overwritten with the
 .Fl b
-option.
-The grid size is inferred from the number of lines and numbers.
+option, in which case the numbers are trimmed.
 The lines are required to contains the same number of values.
+.Pp
+As the grid is finite, any initial population
+will eventually either die out or enter a loop.
+.Nm
+exits once the grid dies out.
+With the
+.Fl g
+option,
+.Nm
+will stop after that many generations.
+With the
+.Fl c Ar num
+option,
+.Nm
+will check the previous
+.Ar num
+generations to detect a possible loop.
+By default,
+.Nm
+keeps going even after a loop is detected.
+Use the
+.Fl l
+option to stop instead.
 .Pp
 If an
 .Ar output
 file is specified,
 .Nm
-will save the final population.
+will save the content of the grid at that moment of evolution.
+This can be used to save a stable population living in a loop.
+.Pp
 A file name ending with
 .Sq png
 determines the PNG format.
@@ -79,28 +103,6 @@ or an
 file name of
 .Sq -
 is recognized to mean standard input and standard output, respectively.
-.Pp
-The game keeps running while at least one cell is alive,
-meaning at least one of the cell's bits is non-zero.
-With the
-.Fl g
-option,
-.Nm
-will stop after at most that many generations.
-With the
-.Fl c Ar num
-option,
-.Nm
-will check the previous
-.Ar num
-generations to see if the evolution has entered a loop
-and will stop writing the output in that case.
-By default,
-.Nm
-will continue to run even after a loop is entered;
-use the
-.Fl l
-option to exit instead.
 .Pp
 The options are as follows:
 .Pp
