@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
-#include <fcntl.h>
+#include <ctype.h>
 #include <err.h>
 
 int bits = 1;
@@ -22,21 +22,6 @@ struct grid {
 	uint32_t **cell;
 	uint32_t **next;
 };
-
-void
-prgrid(struct grid * grid)
-{
-	uint32_t i, j, w;
-	if (grid == NULL)
-		return;
-	w = ((grid->bits - 1) / 4) + 1;
-	for (i = 0; i < grid->rows; i++) {
-		for (j = 0; j < grid->cols; j++)
-			printf("%0*x ", w, grid->cell[i][j]);
-		putchar('\n');
-	}
-	/*printf("gen %u: %u live cells\n", grid->time, grid->live);*/
-}
 
 struct grid*
 init(uint32_t rows, uint32_t cols, int bits)
@@ -68,7 +53,7 @@ init_rand(uint32_t rows, uint32_t cols, int bits)
 	struct grid * grid = NULL;
 	if ((grid = init(rows, cols, bits)) == NULL)
 		return NULL;
-	mask = (1 << bits) - 1;
+	mask = bits < 32 ? (1 << bits) - 1 : 0xffffffff;
 	/* Init whole rows, regardless of bit width - there is nothing
 	 * to be gained by doing the random init by individual cells. */
 	for (i = 0; i < rows; i++) {
@@ -80,15 +65,88 @@ init_rand(uint32_t rows, uint32_t cols, int bits)
 }
 
 struct grid*
-init_txt(int ifile)
+init_txt(FILE* file)
+{
+	uint32_t num = 0;
+	const char *e = NULL;
+	uint32_t r, rows = 0;
+	uint32_t c, cols = 0;
+	struct grid* grid = NULL;
+	char *p, *q, *line = NULL;
+	size_t cap = 0;
+	ssize_t len;
+	/* how many cols? */
+	if ((len = getline(&line, &cap, file)) == -1) {
+		warnx("Error reading first line");
+		return NULL;
+	} else if (len <= 1) {
+		warnx("First line is empty");
+		return NULL;
+	}
+	for (p = line; *p; cols++) {
+		while (*p && isspace(*p))
+			p++;
+		if (*p == '\0')
+			break;
+		while (*p && !isspace(*p))
+			p++;
+	}
+	rows = 1;
+	/* how many rows? */
+	while ((len = getline(&line, &cap, file)) > 0)
+		rows++;
+	if ((grid = init(rows, cols, 1)) == NULL) {
+		warnx("Error creating %u x %u grid", rows, cols);
+		return NULL;
+	}
+	for (rewind(file), r = 0; r < rows; r++) {
+		if ((len = getline(&line, &cap, file)) < 1) {
+			warnx("short line");
+			return NULL;
+		}
+		for (c = 0, p = line; c < cols; c++) {
+			while (*p && isspace(*p))
+				p++;
+			q = p;
+			/*printf("%u %u reading %s", r, c, p);*/
+			q = strsep(&p, " \t\n\r");
+			if (((num = strtonum(q, 0, UINT32_MAX, &e)) == 0) && e){
+				warnx("%s is %s", q, e);
+				return NULL;
+			}
+			if ((grid->cell[r][c] = num))
+				grid->live++;
+		}
+	}
+	/*free(line);*/
+	return grid;
+}
+
+void
+write_txt(struct grid * grid, FILE* file)
+{
+	uint32_t i, j, w;
+	if (grid == NULL)
+		return;
+	if (file == NULL)
+		return;
+	w = ((grid->bits - 1) / 4) + 1;
+	for (i = 0; i < grid->rows; i++) {
+		for (j = 0; j < grid->cols; j++)
+			fprintf(file, "%0*x ", w, grid->cell[i][j]);
+		putchar('\n');
+	}
+}
+
+struct grid*
+init_png(FILE* ifile)
 {
 	return NULL;
 }
 
-struct grid*
-init_png(int ifile)
+void
+write_png(struct grid * grid, FILE* file)
 {
-	return NULL;
 }
 
 void
@@ -165,8 +223,8 @@ main(int argc, char** argv)
 {
 	int c;
 	char *p = NULL;
-	int ifile = -1;
-	int ofile = -1;
+	FILE* ifile = NULL;
+	FILE* ofile = NULL;
 	const char * e = NULL;
 	struct grid * grid = NULL;
 
@@ -198,13 +256,14 @@ main(int argc, char** argv)
 
 	if (argc--) {
 		if (strncmp("-", argv[0], 2) == 0) {
-			ifile = STDIN_FILENO;
-		} else if ((ifile = open(argv[0], O_RDONLY)) > 0) {
+			ifile = stdin;
+		} else if ((ifile = fopen(argv[0], "r"))) {
 			if ( (p = strrchr(argv[0], '.'))
 			&& (strncmp("png", ++p, 4) == 0) ) {
 				/* init_png(); */
 			} else {
-				/* init_txt(); */
+				if ((grid = init_txt(ifile)) == NULL)
+					errx(1, "Error reading %s", argv[0]);
 			}
 		} else {
 			if ((p = strchr(argv[0], 'x')) == NULL)
@@ -220,22 +279,24 @@ main(int argc, char** argv)
 	}
 
 	if (argc--) {
-		if (strncmp("-", argv[0], 2)) {
-			ofile = STDOUT_FILENO;
-		} else if ((ofile = open(argv[0], O_WRONLY)) > 0) {
+		if (strncmp("-", argv[1], 2)) {
+			ofile = stdout;
+		} else if ((ofile = fopen(argv[1], "w"))) {
 		}
+	} else {
+		ofile = stdout;
 	}
 
-	prgrid(grid);
+	write_txt(grid, ofile);
 	while (grid->live) {
 		if (stop && (grid->time == stop))
 			break;
 		step(grid);
-		prgrid(grid);
+		write_txt(grid, ofile);
 	}
 
-	close(ifile);
-	close(ofile);
+	fclose(ifile);
+	fclose(ofile);
 
 	return 0;
 }
