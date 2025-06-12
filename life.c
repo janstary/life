@@ -108,7 +108,6 @@ init_txt(FILE* file)
 			while (*p && isspace(*p))
 				p++;
 			q = p;
-			/*printf("%u %u reading %s", r, c, p);*/
 			q = strsep(&p, " \t\n\r");
 			if (((num = strtonum(q, 0, UINT32_MAX, &e)) == 0) && e){
 				warnx("%s is %s", q, e);
