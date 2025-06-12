@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -104,9 +105,13 @@ init_txt(FILE* file)
 			warnx("short line");
 			return NULL;
 		}
-		for (c = 0, p = line; c < cols; c++) {
+		for (c = 0, p = line; p && *p && (c < cols); c++) {
 			while (*p && isspace(*p))
 				p++;
+			if (p == NULL || *p == '\0') {
+				/* short line */
+				break;
+			}
 			q = p;
 			q = strsep(&p, " \t\n\r");
 			if (((num = strtonum(q, 0, UINT32_MAX, &e)) == 0) && e){
@@ -115,9 +120,24 @@ init_txt(FILE* file)
 			}
 			if ((grid->cell[r][c] = num))
 				grid->live++;
+			/* FIXME up the bits? */
+		}
+		if (c < cols) {
+			warnx("row %u has %u < %u cols", r, c, cols);
+			return NULL;
+		}
+		while (*p && isspace(*p))
+			p++;
+		if (p && *p) {
+			warnx("row %u has > %u cols", r, c);
+			return NULL;
 		}
 	}
-	/*free(line);*/
+	if (r < rows) {
+		warnx("Only got %u < %u rows", r, rows);
+		return NULL;
+	}
+	free(line);
 	return grid;
 }
 
