@@ -24,6 +24,17 @@ struct grid {
 	uint32_t **next;
 };
 
+uint32_t
+numbits(uint32_t num)
+{
+	uint32_t bits = 1;
+	printf("%u", num);
+	while ((num = (num >> 1)))
+		bits++;
+	printf(" needs %u bits\n", bits);
+	return bits;
+}
+
 struct grid*
 init(uint32_t rows, uint32_t cols, int bits)
 {
@@ -69,6 +80,7 @@ struct grid*
 init_txt(FILE* file)
 {
 	uint32_t num = 0;
+	uint32_t max = 0;
 	const char *e = NULL;
 	uint32_t r, rows = 0;
 	uint32_t c, cols = 0;
@@ -120,7 +132,10 @@ init_txt(FILE* file)
 			}
 			if ((grid->cell[r][c] = num))
 				grid->live++;
-			/* FIXME up the bits? */
+			if (num > max) {
+				grid->bits = numbits(num);
+				max = num;
+			}
 		}
 		if (c < cols) {
 			warnx("row %u has %u < %u cols", r, c, cols);
