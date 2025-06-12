@@ -210,10 +210,10 @@ main(int argc, char** argv)
 			if ((p = strchr(argv[0], 'x')) == NULL)
 				errx(1, "%s is not a WxH size", argv[0]);
 			*p++ = '\0';
-			if ((0 == (w=strtonum(argv[0],1,UINT32_MAX, &e))) && e)
-				errx(1, "%s is not a width", argv[0]);
-			if ((0 == (h = strtonum(p, 1, UINT32_MAX, &e))) && e)
-				errx(1, "%s is not a height", p);
+			if ((0 == (w=strtonum(argv[0],3,UINT32_MAX, &e))) && e)
+				errx(1, "%s is %s", argv[0], e);
+			if ((0 == (h = strtonum(p, 3, UINT32_MAX, &e))) && e)
+				errx(1, "%s is %s", p, e);
 			if ((grid = init_rand(h, w, bits)) == NULL)
 				errx(1, "Cannot init random %ux%u grid", w, h);
 		}
