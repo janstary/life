@@ -32,7 +32,6 @@ numbits(uint32_t num)
 	printf("%u", num);
 	while ((num = (num >> 1)))
 		bits++;
-	printf(" needs %u bits\n", bits);
 	return bits;
 }
 
