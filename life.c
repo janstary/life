@@ -29,7 +29,6 @@ uint32_t
 numbits(uint32_t num)
 {
 	uint32_t bits = 1;
-	printf("%u", num);
 	while ((num = (num >> 1)))
 		bits++;
 	return bits;
