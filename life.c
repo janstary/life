@@ -9,6 +9,7 @@
 int bits = 1;
 int loop = 1;
 int less = 2;
+int born = 3;
 int more = 3;
 
 uint32_t hist = 0;
@@ -206,7 +207,7 @@ bstep(struct grid * grid, uint32_t r, uint32_t c, unsigned b)
 		(grid->cell[nr][nc] & mask) )
 		>> b;
 	/*printf("(%u,%u)[%u] has %u\n", r, c, b, nbhd);*/
-	if (nbhd == less) {
+	if (nbhd == born) {
 		grid->next[r][c] |= mask;
 	} else if ((nbhd < less) || (nbhd > more)) {
 		grid->next[r][c] &= ~mask;
