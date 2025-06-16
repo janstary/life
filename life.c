@@ -256,8 +256,8 @@ main(int argc, char** argv)
 {
 	int c;
 	char *p = NULL;
-	FILE* ifile = NULL;
-	FILE* ofile = NULL;
+	FILE* ifile = stdin;
+	FILE* ofile = stdout;
 	const char * e = NULL;
 	struct grid * grid = NULL;
 
@@ -299,6 +299,7 @@ main(int argc, char** argv)
 					errx(1, "Error reading %s", argv[0]);
 			}
 		} else {
+			ifile = stdin;
 			if ((p = strchr(argv[0], 'x')) == NULL)
 				errx(1, "%s is not a WxH size", argv[0]);
 			*p++ = '\0';
